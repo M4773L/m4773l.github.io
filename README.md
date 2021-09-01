@@ -3,8 +3,11 @@
 
 ### Welcome to my portfolio!
 
- Welcome all!
-   
+ Hello world
+
+## About me
+[a relative link] (/about/about.md)
+
 
 ### Contact
 For any queries or to get in touch, you can reach me at: 
