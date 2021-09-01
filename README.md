@@ -1,8 +1,5 @@
-## Welcome to GitHub Pages
+## M4773L - My journey to a career in cyber-security
 
-You can use the [editor on GitHub](https://github.com/M4773L/m4773l.github.io/edit/main/README.md) to maintain and preview the content for your website in Markdown files.
-
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
 
 ### Markdown
 
