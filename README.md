@@ -1,13 +1,9 @@
 ## My journey to a career in cyber-security. (Under-Development)
 
 
-### Welcome to my portfolio!
+### Welcome to my GitHub page!
 
- Hello world
-
-## About me
-[a relative link] (/about/about.md)
-
+ echo "Hello world" >> Welcome.sh
 
 ### Contact
 For any queries or to get in touch, you can reach me at: 
