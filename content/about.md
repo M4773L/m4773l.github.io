@@ -11,7 +11,7 @@ My favourite course topic was penetration testing where we covered red-teaming t
 in our own GNS3 virtualised lab environment.   
 
 My goal with this site is to provide knowledge and help to educate others passionate about IT, but in particular the cyber security aspect of things. 
-If you are a prospective employer welcome to my site, please take a look around. (The [**Blog**](/content/blog) has most of the content linked.)  
+If you are a prospective employer welcome to my site, please take a look around. (The [**Blog**](/blog) has most of the content linked.)  
 
 ### Education
 - Certificate IV in Cyber Security - TAFESA  
