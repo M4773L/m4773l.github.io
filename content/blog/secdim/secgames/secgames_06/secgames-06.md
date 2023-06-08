@@ -181,11 +181,17 @@ def read_log(log: Log):
     if os.path.isabs(log.name) or "/" in log.name:
         return HTTPException(status_code=403, detail="Forbidden: Shenanigans!")
 
+    if log.subdir.count("/") > 1:
+        return HTTPException(status_code=403, detail="Forbidden: Shenanigans!")
+        
     # Check filepath for illegal characters used in path traversal 
     filepath = os.path.join(PREFIX_DIR, log.subdir, log.name)
     if check_file_path(filepath):
         return HTTPException(status_code=403, detail="Forbidden: Path Traversal!")
-    
+        
+    if not filepath.startswith(PREFIX_DIR):
+        return HTTPException(status_code=403, detail="Forbidden: Path Traversal!")
+
     try:
         with open(filepath, "r") as content:
             return {"name": log.name, "content": content.read()}

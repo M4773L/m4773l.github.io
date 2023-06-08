@@ -22,7 +22,7 @@ If you are a prospective employer welcome to my site, please take a look around.
 ### CTF's
 - Pro's vs Joe's - BSides Delaware 2021  
 Over 36 hours of red & blue teaming action, our team had members in Australia, Japan and the United States.  
-[**Read More**](/content/ctf/pvj-2021)  
+[**Read More**](/blog/ctfs/pvj_2021/pvj-2021/)  
 
 - National Missing Persons Hackathon - Cyber Week 2020  
 As part of the Australian Cyber-week 2020, our team had the opportunity to attend in-person at the Cyber Test-range based in the Lot 14 Precinct, Adelaide.  
