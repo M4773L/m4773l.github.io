@@ -136,34 +136,12 @@ By traversing directories I have read the 'passwd' file stored in the '/etc/' di
 &nbsp;
 
 ### Security Fix
-To effectively patch the path traversal vulnerability we need to handle a few issues, we need to effectively sanitise the input we receive from the POST request and then check for any character sequences that can be used in traversing directories.  
+To effectively patch the path traversal vulnerability we need to join the path segments together and resolve any redundant seperators before checking that the filepath starts with the prefix directory.   
 
-1. Normalize the user supplied strings:  
-Using the 'unicodedata.normalize' function we will decompose the user supplied input to normalize any confusing unicode characters to their simplest form. Using list comprehension we will now get the ordinary number for each character in the string and if it is outside of the ascii range (0-127) we will respond with a Forbidden Request, status code 403.  
-2. Create the filepath and check for banned character sequences:  
-Using the 'os.path.join' function we will join the 3 sub-strings together to form the filepath. Once again, using list comprehension we will identify if any of the banned character sequences I have stored in a list are contained in the filepath, if yes we will respond with a Forbidden Request, status code 403.  
-3. The default operation of the 'os.path.join' function when supplied with an absolute path any previous segments are ignored. For instance, if our application receives an absolute path as the filename parameter, the subdir parameter and constant value of the log subdirectory path would be ignored and the absolute path received would be handled by the 'open()' function. 
-This would directly result in being able to access files outside the log directory.  
+The default operation of the 'os.path.join' function when supplied with an absolute path any previous segments are ignored. For instance, if our application receives an absolute path as the filename parameter, the subdir parameter and constant value of the log subdirectory path would be ignored and the absolute path received would be handled by the 'open()' function. 
+This would directly result in being able to access files outside the log directory, therefore we need to get the full resolved path and conduct the prefix check to ensure that only files in the logs subdirectory can be accessed.  
 [OS Path Documentation - Join](https://docs.python.org/3.10/library/os.path.html#os.path.join)
 
-**Unicode Normalisation / ASCII Validation**  
-```
-def check_chars(user_input):
-    normalize("NFD", user_input)
-    if [char for char in user_input if ord(char) > 127]:
-        return True
-    return False
-```
-Normalize the user_input and check the ordinary character number, if greater than 127 we will return True else False.  
-
-**Banned Character Sequences**  
-```
-def check_file_path(path):
-    if bool([char for char in BANNED_FILE_CHARS if(char in path)]):
-        return True
-    return False
-```
-Using list comprehension, check if any banned characters or sequences from the defined list are contained in the full filepath.  
 
 **Log Enpoint Implementation**  
 ```
@@ -172,23 +150,11 @@ def read_log(log: Log):
     """
     Returns content of the log file in logs directory and
     sub-directories
-    """
-    # Check user input for unicode
-    if check_chars(log.subdir) or check_chars(log.name):
-        return HTTPException(status_code=403, detail="Forbidden: Illegal Unicode Characters!")
-    
-    # Check is the log name is an absolute path or contains a '/'   
-    if os.path.isabs(log.name) or "/" in log.name:
-        return HTTPException(status_code=403, detail="Forbidden: Shenanigans!")
+    """    
+    # Join the filepath segments and normalise to resolve any traversal techniques 
+    filepath = os.path.normpath(os.path.join(PREFIX_DIR, log.subdir, log.name))   
 
-    if log.subdir.count("/") > 1:
-        return HTTPException(status_code=403, detail="Forbidden: Shenanigans!")
-        
-    # Check filepath for illegal characters used in path traversal 
-    filepath = os.path.join(PREFIX_DIR, log.subdir, log.name)
-    if check_file_path(filepath):
-        return HTTPException(status_code=403, detail="Forbidden: Path Traversal!")
-        
+    # Check that the resolved path starts with the prefix directory 
     if not filepath.startswith(PREFIX_DIR):
         return HTTPException(status_code=403, detail="Forbidden: Path Traversal!")
 
@@ -200,22 +166,20 @@ def read_log(log: Log):
         raise HTTPException(status_code=404, detail="Log not found"
 ```
 This is how I implemented the additional checks into the existing 'read_log' function. 
-First checking for non-ascii unicode characters in the user supplied input, if present we will respond with status code 403 and a message to serve as a deterent.  
-The filepath is then joined and passed to the 'check_file_path' function that will check the full path for any character sequence that has been defined in the constant list 'BANNED_FILE_CHARS'.  
+
+Some examples:  
+
+1. AbsPath as filename {'name': '/etc/passwd'} => This will remain intact through the path join and normalisation assignment but will fail the prefix check.  
+
+2. Traversal in filename {'name': '../flag.log'} => The "../" will be resolved taking us back a level on the directory tree with the path being "/app/src/flag.log". This will fail the prefix check as it is does not start with "/app/src/logs".  
+&nbsp;
+
 
 **Constant Values, Imports, etc...**  
 ```
-....SNIP....
-
-from unicodedata import normalize
-
-....SNIP....
-
 PREFIX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
-BANNED_FILE_CHARS = ["..", "%", "./", ";", "..\/"]
-....SNIP....
 ```
-For reference, here are my additional import statement and constant values. I tried several times and methods to change the 'PREFIX_DIR' to the full path of the logs directory, I am still unsure of why it would not work. The 'BANNED_FILE_CHARS' list includes a variety of common sequences used to traverse paths or to bypass restrictions for a path traversal vulnerability.  
+For reference, here is the prefix directory stored as a constant value.  
 
 **Testing**
 ```
@@ -271,14 +235,8 @@ m477@Coding:~$ curl -X 'POST' 'http://0.0.0.0:8080/log' -H 'accept: application/
 Using the standard path traversal technique.  
 
 ```
-m477@Coding:~$ curl -X 'POST' 'http://0.0.0.0:8080/log' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"subdir": "system/․․/․․/․․/", "name": "passwd"}'
-{"status_code":403,"detail":"Forbidden: Illegal Unicode Characters!","headers":null}
-```
-Using confusable unicode characters.   
-
-```
 m477@Coding:~$ curl -X 'POST' 'http://0.0.0.0:8080/log' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"subdir": "", "name": "/etc/passwd"}'
-{"status_code":403,"detail":"Forbidden: Shenanigans!","headers":null}
+{"status_code":403,"detail":"Path Traversal!","headers":null}
 ```
 Supplying an absolute path as filename.  
 
